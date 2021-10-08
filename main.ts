@@ -1,35 +1,3 @@
-controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
-    if (jumps > 0) {
-        return;
-    }
-    mySprite.vy = -100
-    jumps += 1
-})
-sprites.onOverlap(SpriteKind.Player, SpriteKind.Projectile, function (sprite, otherSprite) {
-    game.over(false)
-})
-
-let baum: Sprite = null
-let jumps = 0
-let mySprite: Sprite = null
-mySprite = sprites.create(img`
-    . . . . . . . . . . b 5 b . . . 
-    . . . . . . . . . b 5 b . . . . 
-    . . . . . . b b b b b b . . . . 
-    . . . . . b b 5 5 5 5 5 b . . . 
-    . . . . b b 5 d 1 f 5 d 4 c . . 
-    . . . . b 5 5 1 f f d d 4 4 4 b 
-    . . . . b 5 5 d f b 4 4 4 4 b . 
-    . . . b d 5 5 5 5 4 4 4 4 b . . 
-    . b b d d d 5 5 5 5 5 5 5 b . . 
-    b d d d b b b 5 5 5 5 5 5 5 b . 
-    c d d b 5 5 d c 5 5 5 5 5 5 b . 
-    c b b d 5 d c d 5 5 5 5 5 5 b . 
-    c b 5 5 b c d d 5 5 5 5 5 5 b . 
-    b b c c c d d d 5 5 5 5 5 d b . 
-    . . . . c c d d d 5 5 5 b b . . 
-    . . . . . . c c c c c b b . . . 
-    `, SpriteKind.Player)
 const baumStammBild = img`
     .....6feeeeeeeeeef6.....
     ....6776eeeeeeeee676....
@@ -79,25 +47,74 @@ const baumStammBild = img`
     ........................
     ........................
     ........................
-    `
-scene.setBackgroundColor(9)
-mySprite.setStayInScreen(true)
-mySprite.x = 20
-mySprite.y = 0
-mySprite.ay = 100
+    `;
 
-game.onUpdate(function () {
-    if (mySprite.bottom >= screen.height) {
-        jumps = 0
+const mySprite = sprites.create(img`
+    . . . . . . . . . . b 5 b . . . 
+    . . . . . . . . . b 5 b . . . . 
+    . . . . . . b b b b b b . . . . 
+    . . . . . b b 5 5 5 5 5 b . . . 
+    . . . . b b 5 d 1 f 5 d 4 c . . 
+    . . . . b 5 5 1 f f d d 4 4 4 b 
+    . . . . b 5 5 d f b 4 4 4 4 b . 
+    . . . b d 5 5 5 5 4 4 4 4 b . . 
+    . b b d d d 5 5 5 5 5 5 5 b . . 
+    b d d d b b b 5 5 5 5 5 5 5 b . 
+    c d d b 5 5 d c 5 5 5 5 5 5 b . 
+    c b b d 5 d c d 5 5 5 5 5 5 b . 
+    c b 5 5 b c d d 5 5 5 5 5 5 b . 
+    b b c c c d d d 5 5 5 5 5 d b . 
+    . . . . c c d d d 5 5 5 b b . . 
+    . . . . . . c c c c c b b . . . 
+    `, SpriteKind.Player);
+
+let jumps = 0;  // Jump counter
+
+// Init mySprit
+mySprite.setStayInScreen(true); // Player can't fall off the screen
+mySprite.x = 20;
+mySprite.y = screen.height /2;  // Startposition
+mySprite.ay = 160;
+
+// Init screen
+scene.setBackgroundColor(9);
+// Init score
+info.setScore(0);
+
+// Jump one or max two times on button A press
+controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
+    if (jumps > 1) {    // Sometimes we need a second jump
+        return;         // If we jumped too often, nothing happens
     }
 
-    info.setScore(info.score() +1)
+    mySprite.vy = -120;
+    jumps += 1;
+});
+
+// If the two sprites overlap, the game is over
+sprites.onOverlap(SpriteKind.Player, SpriteKind.Projectile, function (sprite, otherSprite) {
+    game.over(false);
+});
+
+// Every time a tree/projectile gets destroyed,
+// the player gets a point
+sprites.onDestroyed(SpriteKind.Projectile, () => {
+    info.setScore(info.score() + 1);
+});
+
+// Check if our bird is already in the air
+// Increase the score
+game.onUpdate(function () {
+    // Reset the jump counter
+    if (mySprite.bottom >= screen.height) jumps = 0
 })
-game.onUpdateInterval(2000, function () {
-    const m = Math.randomRange(1,1000);
-    if(m < 600) {
-        baum = sprites.createProjectileFromSide(baumStammBild, -60, 0)
+
+// Randmize the tree appearance 
+game.onUpdateInterval(1000, () => {
+    const m = Math.randomRange(1, 9);
+    if (m % 3 === 0) {
+        const baum = sprites.createProjectileFromSide(baumStammBild, -60, 0)
         baum.x = screen.width
-        baum.y = screen.height
+        baum.y = screen.height -Math.randomRange(0,10);
     }
 })
